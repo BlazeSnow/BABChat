@@ -1,5 +1,5 @@
 # 使用 Python 镜像
-FROM bitnami/python:3.8.20
+FROM python:3.8-alpine
 
 # 设置工作目录
 WORKDIR /app
