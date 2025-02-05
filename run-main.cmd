@@ -1,1 +1,1 @@
-docker compose up -d -f docker-compose-main.yml
+docker compose -f docker-compose-main.yml up -d
