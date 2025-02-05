@@ -1,14 +1,54 @@
+<!-- templates/index.html -->
 <!DOCTYPE html>
 <html>
-
 <head>
     <title>AI 聊天助手</title>
     <style>
         body {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
+            margin: 0;
+            padding: 0;
             font-family: Arial, sans-serif;
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 侧边栏样式 */
+        .sidebar {
+            width: 300px;
+            background: #f5f5f5;
+            padding: 20px;
+            border-right: 1px solid #ddd;
+        }
+
+        .config-group {
+            margin-bottom: 20px;
+        }
+
+        .config-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        #apiKey {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+        }
+
+        #modelSelect {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+        }
+
+        /* 主内容区样式 */
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
         }
 
         .chat-container {
@@ -17,32 +57,34 @@
             padding: 20px;
             height: 500px;
             overflow-y: auto;
+            margin-bottom: 20px;
+            flex-grow: 1;
         }
 
         .message {
             margin: 10px 0;
             padding: 10px;
             border-radius: 5px;
+            max-width: 80%;
         }
 
         .user-message {
             background-color: #e3f2fd;
-            text-align: right;
+            margin-left: auto;
         }
 
         .bot-message {
-            background-color: #f5f5f5;
+            background-color: #f0f0f0;
         }
 
         .input-group {
-            margin-top: 20px;
             display: flex;
+            gap: 10px;
         }
 
-        input {
+        #userInput {
             flex: 1;
             padding: 10px;
-            margin-right: 10px;
         }
 
         button {
@@ -51,6 +93,7 @@
             color: white;
             border: none;
             cursor: pointer;
+            transition: background-color 0.3s;
         }
 
         button:hover {
@@ -58,29 +101,56 @@
         }
     </style>
 </head>
-
 <body>
-    <h1>AI 聊天助手</h1>
-    <div class="chat-container" id="chatBox"></div>
-    <div class="input-group">
-        <input type="text" id="userInput" placeholder="输入你的消息...">
-        <button onclick="sendMessage()">发送</button>
+    <!-- 左侧配置栏 -->
+    <div class="sidebar">
+        <h2>设置</h2>
+        <div class="config-group">
+            <label for="apiKey">API 密钥:</label>
+            <input type="password" id="apiKey" placeholder="输入OpenAI API密钥">
+        </div>
+        <div class="config-group">
+            <label for="modelSelect">选择模型:</label>
+            <select id="modelSelect">
+                {% for model in models %}
+                <option value="{{ model }}">{{ model }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- 右侧主内容区 -->
+    <div class="main-content">
+        <h1>AI 聊天助手</h1>
+        <div class="chat-container" id="chatBox"></div>
+        <div class="input-group">
+            <input type="text" id="userInput" placeholder="输入你的消息..." onkeypress="handleEnter(event)">
+            <button onclick="sendMessage()">发送</button>
+        </div>
     </div>
 
     <script>
         const chatBox = document.getElementById('chatBox');
         const userInput = document.getElementById('userInput');
+        const apiKeyInput = document.getElementById('apiKey');
+        const modelSelect = document.getElementById('modelSelect');
 
+        // 添加消息到聊天框
         function addMessage(message, isUser) {
             const div = document.createElement('div');
             div.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
             div.textContent = message;
             chatBox.appendChild(div);
-            chatBox.scrollTop = chatBox.scrollHeight; // 自动滚动到底部
+            chatBox.scrollTop = chatBox.scrollHeight;
         }
 
+        // 发送消息
         async function sendMessage() {
             const message = userInput.value.trim();
+            const apiKey = apiKeyInput.value.trim();
+            const model = modelSelect.value;
+            
+            if (!apiKey) return alert('请先输入API密钥');
             if (!message) return;
 
             addMessage(message, true);
@@ -90,7 +160,11 @@
                 const response = await fetch('/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: message })
+                    body: JSON.stringify({
+                        message: message,
+                        api_key: apiKey,
+                        model: model
+                    })
                 });
 
                 const data = await response.json();
@@ -104,11 +178,10 @@
             }
         }
 
-        // 允许回车发送
-        userInput.addEventListener('keypress', (e) => {
+        // 回车发送
+        function handleEnter(e) {
             if (e.key === 'Enter') sendMessage();
-        });
+        }
     </script>
 </body>
-
 </html>
