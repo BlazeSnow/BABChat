@@ -1,2 +1,2 @@
-docker compose pull
-docker compose up
+docker.exe compose pull
+docker.exe compose up
