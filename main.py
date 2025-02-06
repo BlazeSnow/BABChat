@@ -1,4 +1,3 @@
-# 123
 import os
 from flask import Flask, request, render_template
 from openai import OpenAI
@@ -22,7 +21,7 @@ def chat():
     data = request.json
     user_message = data["message"]
     api_key = data["api_key"]
-    model = data.get("model")
+    model = data.get("model", "deepseek-ai/DeepSeek-R1", "deepseek-ai/DeepSeek-V3")
 
     if not api_key:
         return {"reply": "API密钥不能为空", "status": "error"}
