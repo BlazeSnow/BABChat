@@ -21,7 +21,7 @@ def chat():
     data = request.json
     user_message = data["message"]
     api_key = data["api_key"]
-    model = data.get("model", "deepseek-ai/DeepSeek-R1", "deepseek-ai/DeepSeek-V3")
+    model = data.get("model")
 
     if not api_key:
         return {"reply": "API密钥不能为空", "status": "error"}
@@ -37,7 +37,6 @@ def chat():
                 {"role": "system", "content": "你是一个乐于助人的助手"},
                 {"role": "user", "content": user_message},
             ],
-            stream=True,
         )
         return {"reply": response.choices[0].message.content, "status": "success"}
     except Exception as e:
