@@ -1,6 +1,8 @@
 name: 发布至阿里云Docker镜像服务(测试)
 
 on:
+  push:
+    branches: [ main ]
 
 jobs:
   build:
