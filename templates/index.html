@@ -1,106 +1,9 @@
-<!-- templates/index.html -->
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 
 <head>
-    <title>AI 聊天助手</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            display: flex;
-            height: 100vh;
-        }
-
-        /* 侧边栏样式 */
-        .sidebar {
-            width: 300px;
-            background: #f5f5f5;
-            padding: 20px;
-            border-right: 1px solid #ddd;
-        }
-
-        .config-group {
-            margin-bottom: 20px;
-        }
-
-        .config-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-
-        #apiKey {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 15px;
-            box-sizing: border-box;
-        }
-
-        #modelSelect {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 15px;
-        }
-
-        /* 主内容区样式 */
-        .main-content {
-            flex: 1;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .chat-container {
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            padding: 20px;
-            height: 500px;
-            overflow-y: auto;
-            margin-bottom: 20px;
-            flex-grow: 1;
-        }
-
-        .message {
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 5px;
-            max-width: 80%;
-        }
-
-        .user-message {
-            background-color: #e3f2fd;
-            margin-left: auto;
-        }
-
-        .bot-message {
-            background-color: #f0f0f0;
-        }
-
-        .input-group {
-            display: flex;
-            gap: 10px;
-        }
-
-        #userInput {
-            flex: 1;
-            padding: 10px;
-        }
-
-        button {
-            padding: 10px 20px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        button:hover {
-            background-color: #45a049;
-        }
-    </style>
+    <title>BABChat</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 
 <body>
@@ -131,60 +34,7 @@
         </div>
     </div>
 
-    <script>
-        const chatBox = document.getElementById('chatBox');
-        const userInput = document.getElementById('userInput');
-        const apiKeyInput = document.getElementById('apiKey');
-        const modelSelect = document.getElementById('modelSelect');
-
-        // 添加消息到聊天框
-        function addMessage(message, isUser) {
-            const div = document.createElement('div');
-            div.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
-            div.textContent = message;
-            chatBox.appendChild(div);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        // 发送消息
-        async function sendMessage() {
-            const message = userInput.value.trim();
-            const apiKey = apiKeyInput.value.trim();
-            const model = modelSelect.value;
-
-            if (!apiKey) return alert('请先输入API密钥');
-            if (!message) return;
-
-            addMessage(message, true);
-            userInput.value = '';
-
-            try {
-                const response = await fetch('/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        message: message,
-                        api_key: apiKey,
-                        model: model
-                    })
-                });
-
-                const data = await response.json();
-                if (data.status === 'success') {
-                    addMessage(data.reply, false);
-                } else {
-                    addMessage(`错误: ${data.reply}`, false);
-                }
-            } catch (error) {
-                addMessage(`请求失败: ${error}`, false);
-            }
-        }
-
-        // 回车发送
-        function handleEnter(e) {
-            if (e.key === 'Enter') sendMessage();
-        }
-    </script>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 
 </html>
