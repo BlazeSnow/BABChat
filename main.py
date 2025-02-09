@@ -1,47 +1,62 @@
-import os
-from flask import Flask, request, render_template
-from openai import OpenAI
-from dotenv import load_dotenv
-
-load_dotenv()
+# main.py
+from flask import Flask, render_template, request, jsonify
+import openai
 
 app = Flask(__name__)
 
-# 可用模型列表
-AVAILABLE_MODELS = ["deepseek-ai/DeepSeek-R1", "deepseek-ai/DeepSeek-V3"]
+# 预配置的提供商信息
+PROVIDER_CONFIGS = {
+    "阿里云": {
+        "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1/",
+        "default_model": "deepseek-r1",
+    },
+    "硅基流动": {
+        "base_url": "https://api.siliconflow.cn/v1",
+        "default_model": "deepseek-ai/DeepSeek-R1",
+    },
+}
 
 
 @app.route("/")
 def index():
-    return render_template("index.html", models=AVAILABLE_MODELS)
+    return render_template("index.html")
 
 
 @app.route("/chat", methods=["POST"])
 def chat():
     data = request.json
-    user_message = data["message"]
-    api_key = data["api_key"]
-    model = data.get("model")
-
-    if not api_key:
-        return {"reply": "API密钥不能为空", "status": "error"}
-
-    if model not in AVAILABLE_MODELS:
-        return {"reply": "不支持选择的模型", "status": "error"}
+    api_key = data["apiKey"]
+    messages = data["messages"]
+    provider_url = data.get("providerUrl", "")
+    selected_provider = data.get("provider")
+    model_name = data.get("model", "")
 
     try:
-        client = OpenAI(api_key=api_key, base_url="https://api.siliconflow.cn/v1")
+        # 确定base_url
+        if selected_provider in PROVIDER_CONFIGS:
+            base_url = PROVIDER_CONFIGS[selected_provider]["base_url"]
+        elif provider_url:
+            base_url = provider_url.rstrip("/") + "/"
+        else:
+            base_url = PROVIDER_CONFIGS["阿里云"]["base_url"]
+            selected_provider = "阿里云"
+
+        # 确定模型名称
+        if not model_name:
+            model_name = PROVIDER_CONFIGS.get(selected_provider, {}).get(
+                "default_model", "deepseek-r1"
+            )
+
+        client = openai.OpenAI(api_key=api_key, base_url=base_url)
+
         response = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": "你是一个乐于助人的助手"},
-                {"role": "user", "content": user_message},
-            ],
+            model=model_name, messages=messages, temperature=0.7
         )
-        return {"reply": response.choices[0].message.content, "status": "success"}
+
+        return jsonify({"content": response.choices[0].message.content})
     except Exception as e:
-        return {"reply": f"API请求失败: {str(e)}", "status": "error"}
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=80)
+    app.run(debug=True)
