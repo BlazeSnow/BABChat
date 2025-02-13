@@ -58,3 +58,91 @@
         flex-direction: column;
     }
 }
+
+/* 新增样式 */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: white;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-height: 800px;
+    border: 1px solid #e3e8ee;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.chat-history {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    border-bottom: 1px solid #e3e8ee;
+}
+
+.input-area {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    background: white;
+}
+
+.message-input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #e3e8ee;
+    border-radius: 6px;
+}
+
+.send-button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.send-button:hover {
+    background-color: #0056b3;
+}
+
+.message {
+    margin: 5px 0;
+    padding: 10px;
+    border-radius: 6px;
+    opacity: 0;
+    animation: fadeIn 0.5s forwards;
+}
+
+.message.user {
+    background-color: #e9ecef;
+    color: #007bff;
+    align-self: flex-end;
+}
+
+.message.assistant {
+    background-color: #f8f9fa;
+    color: #28a745;
+    align-self: flex-start;
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
+}
