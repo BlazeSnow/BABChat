@@ -54,7 +54,6 @@ def chat(config):
                 assistant_message = response.choices[0].message.content
                 print("助手:", assistant_message)
                 messages.append({"role": "assistant", "content": assistant_message})
-
         except openai.OpenAIError as e:
             print(f"OpenAI API 错误: {e}")
             break
