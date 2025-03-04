@@ -3,7 +3,6 @@ import toml
 
 
 def load_config(config_file="config.toml"):
-    """从 TOML 文件加载配置"""
     try:
         config = toml.load(config_file)
         if not config["openai"]["api_key"]:
@@ -16,20 +15,15 @@ def load_config(config_file="config.toml"):
 
 
 def chat(config):
-    """与 OpenAI API 进行聊天"""
-
-    client = openai.OpenAI(
-        api_key=config["api_key"],
-        base_url=config["api_base"],  # 注意这里是 base_url, 不是 api_base
-    )
+    client = openai.OpenAI(api_key=config["api_key"], base_url=config["api_base"])
     model = config["model_name"]
     temperature = config["temperature"]
     stream = config["stream"]
 
-    messages = []  # 用于存储对话历史
+    messages = []
 
     while True:
-        user_input = input("You: ")
+        user_input = input("你: ")
         if user_input.lower() == "exit":
             break
 
@@ -38,12 +32,9 @@ def chat(config):
         try:
             if stream:
                 response_stream = client.chat.completions.create(
-                    model=model,
-                    messages=messages,
-                    temperature=temperature,
-                    stream=True,  # 明确指定 stream=True
+                    model=model, messages=messages, temperature=temperature, stream=True
                 )
-                print("Assistant: ", end="", flush=True)
+                print("助手: ", end="", flush=True)
                 collected_messages = []
                 for chunk in response_stream:
                     if chunk.choices[0].delta.content is not None:
@@ -58,17 +49,17 @@ def chat(config):
                     model=model,
                     messages=messages,
                     temperature=temperature,
-                    stream=False,  # 明确指定 stream=False
+                    stream=False,
                 )
                 assistant_message = response.choices[0].message.content
-                print("Assistant:", assistant_message)
+                print("助手:", assistant_message)
                 messages.append({"role": "assistant", "content": assistant_message})
 
-        except openai.OpenAIError as e:  # 使用 openai.OpenAIError
-            print(f"An OpenAI API error occurred: {e}")
+        except openai.OpenAIError as e:
+            print(f"OpenAI API 错误: {e}")
             break
         except Exception as e:
-            print(f"An error occurred: {e}")
+            print(f"发生错误: {e}")
             break
 
 
