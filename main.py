@@ -1,67 +1,68 @@
-# main.py
-from flask import Flask, render_template, request, jsonify
 import openai
-import logging
-
-app = Flask(__name__)
-
-# 预配置的提供商信息
-PROVIDER_CONFIGS = {
-    "阿里云": {
-        "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1/",
-        "default_model": "deepseek-r1",
-    },
-    "硅基流动": {
-        "base_url": "https://api.siliconflow.cn/v1",
-        "default_model": "deepseek-ai/DeepSeek-R1",
-    },
-}
+import toml
 
 
-@app.route("/")
-def index():
-    return render_template("index.html")
-
-
-@app.route("/chat", methods=["POST"])
-def chat():
-    data = request.json
-    api_key = data.get("apiKey")
-    messages = data.get("messages", [])
-    provider_url = data.get("providerUrl", "")
-    selected_provider = data.get("provider")
-    model_name = data.get("model", "")
-
-    if not api_key or not messages:
-        return jsonify({"error": "API密钥或消息为空"}), 400
-
+def load_config(config_file="config.toml"):
     try:
-        # 确定base_url
-        if selected_provider in PROVIDER_CONFIGS:
-            base_url = PROVIDER_CONFIGS[selected_provider]["base_url"]
-        elif provider_url:
-            base_url = provider_url.rstrip("/") + "/"
-        else:
-            base_url = PROVIDER_CONFIGS["阿里云"]["base_url"]
-            selected_provider = "阿里云"
+        config = toml.load(config_file)
+        if not config["openai"]["api_key"]:
+            raise ValueError("config.toml 文件中缺少 'api_key' 配置。")
+        return config["openai"]
+    except FileNotFoundError:
+        raise FileNotFoundError("未找到 config.toml 文件。请确保它存在于当前目录。")
+    except (toml.TomlDecodeError, KeyError) as e:
+        raise ValueError(f"config.toml 文件解析错误或缺少必要的配置: {e}")
 
-        # 确定模型名称
-        if not model_name:
-            model_name = PROVIDER_CONFIGS.get(selected_provider, {}).get(
-                "default_model", "deepseek-r1"
-            )
 
-        client = openai.OpenAI(api_key=api_key, base_url=base_url)
+def chat(config):
+    client = openai.OpenAI(api_key=config["api_key"], base_url=config["api_base"])
+    model = config["model_name"]
+    temperature = config["temperature"]
+    stream = config["stream"]
 
-        response = client.chat.completions.create(
-            model=model_name, messages=messages, temperature=0.7
-        )
+    messages = []
 
-        return jsonify({"content": response.choices[0].message.content})
-    except Exception as e:
-        logging.error(f"Error processing chat request: {e}")
-        return jsonify({"error": str(e)}), 500
+    while True:
+        user_input = input("你: ")
+        if user_input.lower() == "exit":
+            break
+
+        messages.append({"role": "user", "content": user_input})
+
+        try:
+            if stream:
+                response_stream = client.chat.completions.create(
+                    model=model, messages=messages, temperature=temperature, stream=True
+                )
+                print("AI: ", end="", flush=True)
+                collected_messages = []
+                for chunk in response_stream:
+                    if chunk.choices[0].delta.content is not None:
+                        print(chunk.choices[0].delta.content, end="", flush=True)
+                        collected_messages.append(chunk.choices[0].delta.content)
+                print()
+                full_reply_content = "".join(collected_messages)
+                messages.append({"role": "assistant", "content": full_reply_content})
+
+            else:
+                response = client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    temperature=temperature,
+                    stream=False,
+                )
+                assistant_message = response.choices[0].message.content
+                print("AI:", assistant_message)
+                messages.append({"role": "assistant", "content": assistant_message})
+        except openai.OpenAIError as e:
+            print(f"API 错误: {e}")
+            break
+        except Exception as e:
+            print(f"发生错误: {e}")
+            break
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=80, debug=False)
+    config = load_config()
+    print("开始与AI的对话，输入exit退出：\n")
+    chat(config)
