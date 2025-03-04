@@ -6,7 +6,7 @@ def load_config(config_file="config.toml"):
     try:
         config = toml.load(config_file)
         if not config["openai"]["api_key"]:
-            raise ValueError("config.toml 文件中缺少 'openai.api_key' 配置。")
+            raise ValueError("config.toml 文件中缺少 'api_key' 配置。")
         return config["openai"]
     except FileNotFoundError:
         raise FileNotFoundError("未找到 config.toml 文件。请确保它存在于当前目录。")
@@ -34,7 +34,7 @@ def chat(config):
                 response_stream = client.chat.completions.create(
                     model=model, messages=messages, temperature=temperature, stream=True
                 )
-                print("助手: ", end="", flush=True)
+                print("AI: ", end="", flush=True)
                 collected_messages = []
                 for chunk in response_stream:
                     if chunk.choices[0].delta.content is not None:
@@ -52,10 +52,10 @@ def chat(config):
                     stream=False,
                 )
                 assistant_message = response.choices[0].message.content
-                print("助手:", assistant_message)
+                print("AI:", assistant_message)
                 messages.append({"role": "assistant", "content": assistant_message})
         except openai.OpenAIError as e:
-            print(f"OpenAI API 错误: {e}")
+            print(f"API 错误: {e}")
             break
         except Exception as e:
             print(f"发生错误: {e}")
@@ -64,4 +64,5 @@ def chat(config):
 
 if __name__ == "__main__":
     config = load_config()
+    print("开始与AI的对话，输入exit退出：\n")
     chat(config)
