@@ -1,95 +1,86 @@
+import openai
+import toml
 import os
-import requests
-import json
-import time
 
 
-def stream_chat_response(api_key, messages, model="deepseek-reasoner"):
-    url = "https://api.deepseek.com/v1/chat/completions"
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}",
-        "Accept": "application/json",
-    }
+def load_config(config_path="config.toml"):
+    """
+    加载配置文件
+    """
+    if not os.path.exists(config_path):
+        print(f"配置文件 {config_path} 不存在！")
+        exit(1)
 
-    data = {
-        "model": model,
-        "messages": messages,
-        "temperature": 0.7,
-        "stream": True,  # 启用流式传输
-    }
-
-    full_response = []
     try:
-        with requests.post(url, json=data, headers=headers, stream=True) as response:
-            for line in response.iter_lines():
-                if line:
-                    decoded_line = line.decode("utf-8")
-
-                    # 处理流式响应格式
-                    if decoded_line.startswith("data: "):
-                        chunk = decoded_line[6:]  # 去掉"data: "前缀
-                        try:
-                            chunk_json = json.loads(chunk)
-                            content = chunk_json["choices"][0]["delta"].get(
-                                "content", ""
-                            )
-                            full_response.append(content)
-                            yield content
-                        except json.JSONDecodeError:
-                            pass
-
+        config = toml.load(config_path)
+        return config
     except Exception as e:
-        yield f"\n[发生错误：{str(e)}]"
+        print(f"加载配置文件失败: {e}")
+        exit(1)
 
-    return "".join(full_response)
 
+def chat_with_openai(api_key, api_base, model, temperature, stream):
+    """
+    和 OpenAI 模型进行聊天
+    """
+    openai.api_key = api_key
+    openai.api_base = api_base
 
-def main():
-    # 配置API密钥
-    api_key = os.getenv("DEEPSEEK_API_KEY")
-    if not api_key:
-        api_key = input("请输入你的DeepSeek API密钥: ")
-
-    # 初始化对话历史
-    messages = []
-
-    print("\n欢迎使用DeepSeek聊天助手！输入'exit'退出程序\n")
+    print("🤖 欢迎使用 OpenAI 聊天程序！输入 'exit' 退出。")
 
     while True:
-        try:
-            # 获取用户输入
-            user_input = input("你：")
-
-            if user_input.lower() in ["exit", "quit"]:
-                print("再见！")
-                break
-
-            # 添加用户消息到历史
-            messages.append({"role": "user", "content": user_input})
-
-            print("\n助手：", end="", flush=True)
-
-            # 流式输出处理
-            full_reply = []
-            for chunk in stream_chat_response(api_key, messages):
-                # 逐个字符打印实现打字机效果
-                for char in chunk:
-                    print(char, end="", flush=True)
-                    time.sleep(0.02)  # 控制输出速度
-                full_reply.append(chunk)
-
-            # 添加完整回复到对话历史
-            messages.append({"role": "assistant", "content": "".join(full_reply)})
-
-            print("\n")
-
-        except KeyboardInterrupt:
-            print("\n用户中断操作，退出程序")
+        user_input = input("\n你: ")
+        if user_input.lower() == "exit":
+            print("👋 再见！")
             break
+
+        try:
+            if stream:
+                # 流式输出
+                response = openai.ChatCompletion.create(
+                    model=model,
+                    messages=[{"role": "user", "content": user_input}],
+                    temperature=temperature,
+                    stream=True,
+                )
+                print("AI: ", end="", flush=True)
+                for chunk in response:
+                    content = (
+                        chunk.get("choices", [{}])[0]
+                        .get("delta", {})
+                        .get("content", "")
+                    )
+                    print(content, end="", flush=True)
+                print()  # 换行
+            else:
+                # 非流式输出
+                response = openai.ChatCompletion.create(
+                    model=model,
+                    messages=[{"role": "user", "content": user_input}],
+                    temperature=temperature,
+                )
+                ai_response = response["choices"][0]["message"]["content"]
+                print(f"AI: {ai_response}")
         except Exception as e:
-            print(f"\n发生错误：{str(e)}")
+            print(f"发生错误: {e}")
 
 
 if __name__ == "__main__":
-    main()
+    # 加载配置
+    config = load_config()
+    openai_config = config.get("openai", {})
+
+    # 获取配置参数
+    api_key = openai_config.get("api_key")
+    api_base = openai_config.get("api_base", "https://api.openai.com/v1")
+    model = openai_config.get("model", "gpt-3.5-turbo")
+    temperature = openai_config.get("temperature", 0.7)
+    stream = openai_config.get("stream", True)
+
+    # 检查 API 密钥是否存在
+    if not api_key:
+        print("❌ API 密钥未设置，请在 config.toml 文件中填写你的 OpenAI API 密钥！")
+        exit(1)
+
+    # 启动聊天程序
+    chat_with_openai(api_key, api_base, model, temperature, stream)
