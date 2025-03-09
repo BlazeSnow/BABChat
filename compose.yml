@@ -2,8 +2,6 @@ services:
   babchat:
     image: registry.cn-hangzhou.aliyuncs.com/babchat/babchat:latest
     container_name: babchat
-    restart: always
-    stdin_open: true
-    tty: true
+    restart: no
     volumes:
       - ./config.toml:/app/config.toml:ro
