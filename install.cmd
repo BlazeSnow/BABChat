@@ -1,1 +1,0 @@
-pip.exe install -r import.txt
