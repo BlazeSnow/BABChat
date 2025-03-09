@@ -6,7 +6,7 @@
 2. 复制本仓库的```compose.yml```和```config_example.toml```文件到空位置，如```C:\BABChat\```
 3. 根据```config_example.toml```的内容，新建并编辑```config.toml```
 4. 拉取镜像：```docker compose pull```
-5. 运行容器：```./rundocker.cmd```
+5. 运行容器：```docker compose run --rm babchat```
 
 ## 使用Python运行
 
